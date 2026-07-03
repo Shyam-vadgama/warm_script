@@ -52,7 +52,7 @@ print_step "Removing old local manifests"
 rm -rf .repo/local_manifests
 
 print_step "Repo init (Infinity-X 16)"
-repo init --no-repo-verify --git-lfs \
+repo init --no-repo-verify --git-lfs --depth 1 \
     -u https://github.com/ProjectInfinity-X/manifest \
     -b 16 \
     -g default,-mips,-darwin,-notdefault

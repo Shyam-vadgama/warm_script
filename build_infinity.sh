@@ -107,8 +107,10 @@ mkdir -p device/xiaomi/warm/configs/audio
 curl -sLo device/xiaomi/warm/configs/audio/audio_policy_configuration.xml \
     https://raw.githubusercontent.com/Niyush-04/device_xiaomi_warm/audio/configs/audio/audio_policy_configuration.xml
 
-# Remove deprecated A16 flag (causes COPY_FILE error)
+# Remove deprecated A16 flag + prebuilt audio HAL flag
+# (audio.primary.pitti is built from source in hardware/qcom-caf/sm8650/audio/primary-hal)
 sed -i '/BUILD_BROKEN_ELF_PREBUILT_PRODUCT_COPY_FILES/d' device/xiaomi/warm/BoardConfig.mk
+sed -i '/TARGET_PROVIDES_AUDIO_HAL/d' device/xiaomi/warm/BoardConfig.mk
 
 # ============================================================
 # STEP 5 — Re-apply fingerprint fix
@@ -120,44 +122,15 @@ if ! grep -q "biometrics.fingerprint" device/xiaomi/warm/configs/vintf/manifest_
 fi
 
 # ============================================================
-# STEP 6 — Download stock vendor + regenerate blobs
-# ============================================================
-print_step "Downloading stock vendor_a.img"
-curl -sLo /tmp/vendor_a.img \
-    'https://drive.usercontent.google.com/download?id=1AjUYgdStk7w0LA9tTRB5iITemahS1Ck-&export=download&authuser=0&confirm=t&uuid=37c07f74-31fa-48a3-8d89-6704293358a7&at=ABswASZh_fdZ7C2ANCKqh6dk4EDP:1783000524749'
-
-print_step "Extracting vendor blobs"
-# Convert sparse → raw if needed
-simg2img /tmp/vendor_a.img /tmp/vendor_raw.img 2>/dev/null || cp /tmp/vendor_a.img /tmp/vendor_raw.img
-
-mkdir -p /tmp/firmware_dump/vendor
-debugfs -R 'rdump / /tmp/firmware_dump/vendor' /tmp/vendor_raw.img 2>/dev/null || {
-    mount -o loop,ro /tmp/vendor_raw.img /tmp/firmware_dump/vendor 2>/dev/null || {
-        echo "ERROR: Cannot extract vendor image. debugfs and mount both failed."
-        exit 1
-    }
-}
-
-print_step "Running extract-files.py"
-ANDROID_ROOT="$(pwd)"
-cd device/xiaomi/warm
-PYTHONPATH=../../../tools/extract-utils python3 extract-files.py /tmp/firmware_dump
-cd "$ANDROID_ROOT"
-umount /tmp/firmware_dump/vendor 2>/dev/null || true
-
-# ============================================================
-# STEP 7 — Set up Infinity-X product files
+# STEP 6 — Set up Infinity-X product files
 # ============================================================
 print_step "Setting INFINITY_MAINTAINER"
-if [ ! -f device/xiaomi/${DEVICE}/infinity_warm.mk ]; then
-    echo '$(call inherit-product, vendor/xiaomi/warm/warm-vendor.mk)' > device/xiaomi/${DEVICE}/infinity_warm.mk
-fi
 sed -i "s/PRODUCT_NAME := lineage_warm/PRODUCT_NAME := infinity_warm/" device/xiaomi/${DEVICE}/infinity_warm.mk
 grep -q "INFINITY_MAINTAINER" device/xiaomi/${DEVICE}/infinity_warm.mk || \
     echo 'INFINITY_MAINTAINER := Shyam-vadgama' >> device/xiaomi/${DEVICE}/infinity_warm.mk
 
 # ============================================================
-# STEP 8 — Build
+# STEP 7 — Build
 # ============================================================
 print_step "Setting up build environment"
 source build/envsetup.sh
@@ -173,7 +146,7 @@ telegram_reply "Build started for warm (Infinity-X)"
 m bacon -j$(nproc --all) 2>&1 | tee "$BUILD_LOG"
 
 # ============================================================
-# STEP 9 — Post-build
+# STEP 8 — Post-build
 # ============================================================
 BUILD_DIFF=$(( $(date +%s) - START_TIME ))
 if [ $BUILD_DIFF -ge 3600 ]; then

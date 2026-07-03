@@ -139,9 +139,10 @@ debugfs -R 'rdump / /tmp/firmware_dump/vendor' /tmp/vendor_raw.img 2>/dev/null |
 }
 
 print_step "Running extract-files.py"
+ANDROID_ROOT="$(pwd)"
 cd device/xiaomi/warm
 PYTHONPATH=../../../tools/extract-utils python3 extract-files.py /tmp/firmware_dump
-cd ../..
+cd "$ANDROID_ROOT"
 umount /tmp/firmware_dump/vendor 2>/dev/null || true
 
 # ============================================================
@@ -149,7 +150,7 @@ umount /tmp/firmware_dump/vendor 2>/dev/null || true
 # ============================================================
 print_step "Setting INFINITY_MAINTAINER"
 if [ ! -f device/xiaomi/${DEVICE}/infinity_warm.mk ]; then
-    echo '$('call inherit-product, vendor/xiaomi/warm/warm-vendor.mk')' > device/xiaomi/${DEVICE}/infinity_warm.mk
+    echo '$(call inherit-product, vendor/xiaomi/warm/warm-vendor.mk)' > device/xiaomi/${DEVICE}/infinity_warm.mk
 fi
 sed -i "s/PRODUCT_NAME := lineage_warm/PRODUCT_NAME := infinity_warm/" device/xiaomi/${DEVICE}/infinity_warm.mk
 grep -q "INFINITY_MAINTAINER" device/xiaomi/${DEVICE}/infinity_warm.mk || \

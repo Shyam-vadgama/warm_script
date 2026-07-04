@@ -79,6 +79,18 @@ XMLEOF
 print_step "Syncing source"
 /opt/crave/resync.sh
 
+# Verify vendor tree was synced
+print_step "Verifying vendor tree"
+if [ ! -f vendor/xiaomi/warm/warm-vendor.mk ]; then
+    echo "vendor/xiaomi/warm/warm-vendor.mk not found after sync — fetching directly"
+    mkdir -p vendor/xiaomi/warm
+    git clone --depth=1 https://github.com/bitstash-io/vendor_xiaomi_warm.git \
+        -b lineage-23.2 vendor/xiaomi/warm 2>&1 || {
+        echo "ERROR: Failed to fetch vendor tree"
+        exit 1
+    }
+fi
+
 # ============================================================
 # STEP 3 — Add pitti to qcom-caf
 # ============================================================

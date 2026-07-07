@@ -125,10 +125,9 @@ sed -i '/BUILD_BROKEN_ELF_PREBUILT_PRODUCT_COPY_FILES/d' device/xiaomi/warm/Boar
 sed -i '/TARGET_PROVIDES_AUDIO_HAL/d' device/xiaomi/warm/BoardConfig.mk
 
 # ============================================================
-# STEP 5 — Re-apply fingerprint fix
+# STEP 5 — Re-apply fingerprint HAL vintf entry
 # ============================================================
-print_step "Re-applying fingerprint HAL entries"
-sed -i '/frameworks\/native\/data\/etc\/android.hardware.fingerprint.xml/s/$/ \\\n    $(LOCAL_PATH)\/vendor\/etc\/init\/android.hardware.biometrics.fingerprint-service.xiaomi.rc:$(TARGET_COPY_OUT_VENDOR)\/etc\/init\/android.hardware.biometrics.fingerprint-service.xiaomi.rc/' device/xiaomi/warm/device.mk
+print_step "Re-applying fingerprint HAL vintf entry"
 if ! grep -q "biometrics.fingerprint" device/xiaomi/warm/configs/vintf/manifest_pitti.xml; then
     sed -i '/<\/manifest>/i\    <hal format=\"aidl\">\n        <name>android.hardware.biometrics.fingerprint<\/name>\n        <version>4<\/version>\n        <fqname>IFingerprint\/default<\/fqname>\n    <\/hal>' device/xiaomi/warm/configs/vintf/manifest_pitti.xml
 fi
